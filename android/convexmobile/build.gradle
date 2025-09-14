@@ -2,9 +2,9 @@ plugins {
     alias(libs.plugins.rust.android.gradle)
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.9.0'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.2.20'
     id 'signing'
-    id 'com.palantir.git-version' version '3.1.0'
+    id 'com.palantir.git-version' version '4.0.0'
 }
 
 android.buildFeatures.buildConfig true
@@ -14,13 +14,13 @@ def libraryVersion = gitVersion(prefix:'kotlin@')
 
 android {
     namespace 'dev.convex.android'
-    compileSdk 34
+    compileSdkVersion 36
 
-    ndkVersion = "27.0.11902837"
+    ndkVersion = "29.0.13846066"
 
     defaultConfig {
         minSdk 26
-        targetSdk 34
+        targetSdk 36
         versionCode 1
         versionName libraryVersion
         buildConfigField 'String', 'LIBRARY_VERSION', "\"${libraryVersion}\""
@@ -38,9 +38,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
+     kotlinOptions {
+         jvmTarget = '1.8'
+     }
     publishing {
         multipleVariants {
             allVariants()
@@ -62,7 +62,7 @@ cargo {
     }
 }
 
-tasks.whenTaskAdded { task ->
+tasks.configureEach { task ->
     if ((task.name == 'generateDebugUniFFIBindings' || task.name == 'generateReleaseUniFFIBindings')) {
         task.dependsOn 'cargoBuild'
     }
@@ -78,12 +78,12 @@ tasks.register("generateUniFFIBinary", Exec) {
     commandLine 'cargo', 'build'
 }
 
-android.libraryVariants.all { variant ->
+android.libraryVariants.configureEach { variant ->
     def t = tasks.register("generate${variant.name.capitalize()}UniFFIBindings", Exec) {
         workingDir "${project.projectDir}/../../rust"
-        // Should work in linux/mac, tested in windows. Change if unnecessary
+        // Should work in linux/mac, worked in windows. Change if unnecessary
         commandLine 'cargo', 'run', '--bin', 'uniffi-bindgen', '--', 'generate', '--library', "${project.layout.buildDirectory.asFile.get().path}/rustJniLibs/android/arm64-v8a/libconvexmobile.so", '--language', 'kotlin', '--out-dir', "${project.layout.buildDirectory.asFile.get().path}/generated/source/uniffi/${variant.name}/java"
-        //commandLine './target/debug/uniffi-bindgen', 'generate', '--library', "${project.layout.buildDirectory.asFile.get().path}/rustJniLibs/android/arm64-v8a/libconvexmobile.so", '--language', 'kotlin', '--out-dir', "${project.layout.buildDirectory.asFile.get().path}/generated/source/uniffi/${variant.name}/java"
+        //commandLine './target/debug/uniffi-bindgen', 'generate', '--library', "${project.layout.buildDirectory.asFile.get().path}/rustJniLibs/android/arm64-v8a/libconvexmobile.so', '--language', 'kotlin', '--out-dir', "${project.layout.buildDirectory.asFile.get().path}/generated/source/uniffi/${variant.name}/java"
         dependsOn 'generateUniFFIBinary'
     }
     def sourceSet = variant.sourceSets.find { it.name == variant.name }
@@ -157,7 +157,7 @@ dependencies {
     androidTestImplementation libs.androidx.junit
     androidTestImplementation libs.androidx.espresso.core
     // Have to use string dependency reference for JNA due to https://github.com/gradle/gradle/issues/21267
-    implementation "net.java.dev.jna:jna:5.14.0@aar"
+    implementation "net.java.dev.jna:jna:5.17.0@aar"
     implementation libs.kotlinx.serialization.json
     testImplementation libs.kotlinx.coroutines.test
     androidTestImplementation libs.kotlinx.coroutines.test
@@ -165,7 +165,7 @@ dependencies {
 }
 
 
-task convexLocalBackend {
+tasks.register('convexLocalBackend') {
     doFirst {
         println("Launching Convex backend")
         ext.process = new ProcessBuilder()
@@ -175,7 +175,7 @@ task convexLocalBackend {
     }
 }
 
-task stopConvexLocalBackend {
+tasks.register('stopConvexLocalBackend') {
     doFirst {
         println("Stopping Convex backend")
         if (tasks.convexLocalBackend.process != null) {

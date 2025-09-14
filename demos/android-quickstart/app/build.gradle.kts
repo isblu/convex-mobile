@@ -2,16 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     kotlin("plugin.serialization") version "1.9.0"
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "dev.convex.officialquickstart"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "dev.convex.officialquickstart"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -23,7 +24,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -69,6 +70,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("dev.convex:android-convexmobile:0.4.1@aar") {
         isTransitive = true
-    }
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    }    
+    implementation("net.java.dev.jna:jna:5.17.0@aar")
+    implementation(libs.kotlinx.serialization.json)
 }
